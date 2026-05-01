@@ -3,13 +3,19 @@ import './ImageGenerator.css';
 import default_image from '../Assets/default_image.svg';
 import Ghost from '../Assets/Ghost.gif';
 
-export const ImageGenerator = () => {
+interface ImageGeneratorProps {
+    onImageGenerated: (prompt: string, url: string) => void;
+}
+
+export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
     const [image_url, setImage_url] = useState('/');
     const [loading, setLoading] = useState(false); 
+    const [activePrompt, setActivePrompt] = useState(''); 
     const inputRef = useRef<HTMLInputElement>(null);
     
     const handleGenerate = (e?: React.FormEvent) => {
         if (e) e.preventDefault(); 
+
         if (!inputRef.current || !inputRef.current.value.trim()) {
             alert("Please enter a prompt first!"); 
             return;
@@ -18,9 +24,13 @@ export const ImageGenerator = () => {
         setLoading(true);
 
         const prompt = inputRef.current.value;
+        setActivePrompt(prompt);
+
         const safePrompt = encodeURIComponent(prompt);
         const randomSeed = Math.floor(Math.random() * 10000); 
+        
         const newImageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?seed=${randomSeed}&width=512&height=512&nologo=true`;
+
         setImage_url(newImageUrl);
         inputRef.current.value = '';
     };
@@ -32,20 +42,26 @@ export const ImageGenerator = () => {
             <div className="img-loading">
                 <div className="image">
                     {loading && <img style={{width:'40vw', height:'40vh'}} src={Ghost} alt="Loading..." />}
+                    
                     <img 
-    src={image_url === '/' ? default_image : image_url} 
-    alt="Generated AI Art" 
-    style={{ display: loading ? 'none' : 'block' }}
-    referrerPolicy="no-referrer" /* <-- THE MAGIC SAUCE */
-    onLoad={() => setLoading(false)} 
-    onError={() => {
-        if (image_url !== '/') {
-            alert("Image generation failed. Try another prompt!");
-            setImage_url(default_image);
-            setLoading(false);
-        }
-    }}
-/>
+                        src={image_url === '/' ? default_image : image_url} 
+                        alt="Generated AI Art" 
+                        style={{ display: loading ? 'none' : 'block' }}
+                        referrerPolicy="no-referrer"
+                        onLoad={() => {
+                            setLoading(false);
+                            if (image_url !== '/') {
+                                onImageGenerated(activePrompt, image_url);
+                            }
+                        }} 
+                        onError={() => {
+                            if (image_url !== '/') {
+                                alert("Image generation failed. Try another prompt!");
+                                setImage_url(default_image);
+                                setLoading(false);
+                            }
+                        }}
+                    />
                     
                     <div className="loading">
                       <div className={loading ? "loading-bar-full" : "loading-bar"}></div>
@@ -69,5 +85,4 @@ export const ImageGenerator = () => {
         </div>
     );
 };
-
-export default ImageGenerator;
+export default ImageGenerator

@@ -1,43 +1,29 @@
-import { useState } from 'react';
-import PromptInput from './Components/Prompt Inputs/PromptInputs';
+import { ImageGenerator } from './Components/ImageGenerator/ImageGenerator';
+import { HistorySidebar } from './Components/History';
+import { useLocalStorage } from './hooks/UseLocalstorage';
 import { HistoryItem } from './Image';
-import ImageGenerator from './Components/ImageGenerator/ImageGenerator';
+import './App.css'; // Make sure this is imported!
 
 const App = () => {
-  const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [history, setHistory] = useLocalStorage<HistoryItem[]>('ai-history-key', []);
 
-  const handleGenerate = async (prompt: string) => {
-    setIsLoading(true);
-    const safePrompt = encodeURIComponent(prompt);
-    const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}`;
-
-    const img = new Image();
-    img.src = imageUrl;
-    img.onload = () => {
-      setCurrentImage(imageUrl);
-
-      const newItem: HistoryItem = {
-        id: crypto.randomUUID(), 
-        prompt: prompt,
-        url: imageUrl,
-        timestamp: Date.now()
-      };
-      setHistory(prev => [newItem, ...prev]);
-      setIsLoading(false);
+    const handleNewImage = (prompt: string, url: string) => {
+        const newItem: HistoryItem = {
+            id: crypto.randomUUID(),
+            prompt: prompt,
+            url: url,
+            timestamp: Date.now()
+        };
+        setHistory(prev => [newItem, ...prev]);
     };
-  };
 
-  return (
-    <div className="app-container">
-      <ImageGenerator/>
-      {/* <h1>AI Image Generator</h1>
-      
-      <PromptInput onGenerate={handleGenerate} isLoading={isLoading} /> */}
-
-    </div>
-  );
+    return (
+        <div className="app-layout">
+            <ImageGenerator onImageGenerated={handleNewImage} />
+            <div style={{paddingTop:'40px'}}>
+            <HistorySidebar history={history} /></div>
+        </div>
+    );
 };
 
 export default App;
