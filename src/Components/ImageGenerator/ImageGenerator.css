@@ -108,7 +108,22 @@
     background: #c9177a; 
 }
 
-
+.download-btn-main {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background-color: #de1b89;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%; 
+}
+.download-btn-main:hover {
+    background-color: #c9177a;
+}
 
 @media (max-width: 600px) {
     .search-box {

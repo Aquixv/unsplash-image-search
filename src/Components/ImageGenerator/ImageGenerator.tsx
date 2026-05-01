@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import './ImageGenerator.css';
 import default_image from '../Assets/default_image.svg';
 import Ghost from '../Assets/Ghost.gif';
+import { downloadImage } from '../utils/download';
 
 interface ImageGeneratorProps {
     onImageGenerated: (prompt: string, url: string) => void;
@@ -35,13 +36,13 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
         inputRef.current.value = '';
     };
 
-    return (
+        return (
         <div className='ai-image-generator'>
             <div className='header'>AI image <span>Generator</span></div>
             
             <div className="img-loading">
                 <div className="image">
-                    {loading && <img style={{width:'40vw', height:'40vh'}} src={Ghost} alt="Loading..." />}
+                    {loading && <img src={Ghost} alt="Loading..." />}
                     
                     <img 
                         src={image_url === '/' ? default_image : image_url} 
@@ -53,7 +54,7 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
                             if (image_url !== '/') {
                                 onImageGenerated(activePrompt, image_url);
                             }
-                        }} 
+                        }}
                         onError={() => {
                             if (image_url !== '/') {
                                 alert("Image generation failed. Try another prompt!");
@@ -62,7 +63,14 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
                             }
                         }}
                     />
-                    
+                    {image_url !== '/' && !loading && (
+                        <button 
+                            className="download-btn-main"
+                            onClick={() => downloadImage(image_url, activePrompt)}
+                        >
+                            ⬇ Download Image
+                        </button>
+                    )}
                     <div className="loading">
                       <div className={loading ? "loading-bar-full" : "loading-bar"}></div>
                       <div className={loading ? "loading-text" : "display-none"}>Loading....</div>
