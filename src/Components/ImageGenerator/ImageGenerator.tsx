@@ -14,11 +14,12 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
     const [activePrompt, setActivePrompt] = useState(''); 
     const inputRef = useRef<HTMLInputElement>(null);
     
-    const handleGenerate = (e?: React.FormEvent) => {
+    // 1. Make this function async to handle the fetch request
+    const handleGenerate = async (e?: React.FormEvent) => {
         if (e) e.preventDefault(); 
 
         if (!inputRef.current || !inputRef.current.value.trim()) {
-            alert("Please enter a prompt first!"); 
+            alert("Please enter a search term first!"); 
             return;
         }
 
@@ -27,18 +28,44 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
         const prompt = inputRef.current.value;
         setActivePrompt(prompt);
 
-        const safePrompt = encodeURIComponent(prompt);
-        const randomSeed = Math.floor(Math.random() * 10000); 
-        
-        const newImageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?seed=${randomSeed}&width=512&height=512&nologo=true`;
+        try {
+            // 2. Hit the Unsplash search API (fetching only 1 image for this layout)
+            const response = await fetch(
+                `https://api.unsplash.com/search/photos?query=${encodeURIComponent(prompt)}&per_page=1`, 
+                {
+                    headers: {
+    Authorization: `Client-ID ${import.meta.env.VITE_UNSPLASH_KEY}`
+}
+                }
+            );
 
-        setImage_url(newImageUrl);
-        inputRef.current.value = '';
+            const data = await response.json();
+
+            // 3. Check if we actually got results back
+            if (data.results && data.results.length > 0) {
+                // Grab the 'regular' sized URL from the first result
+                setImage_url(data.results[0].urls.regular);
+                inputRef.current.value = '';
+            } else {
+                alert("No images found for that search. Try something else!");
+                setImage_url(default_image);
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error("Search error:", error);
+            alert("Failed to search Unsplash. Check your network or API key.");
+            setImage_url(default_image);
+            setLoading(false);
+        }
+        
+        // Note: We don't call setLoading(false) on success here because 
+        // your <img> tag's onLoad event handles it beautifully once the image actually renders!
     };
 
-        return (
+    return (
         <div className='ai-image-generator'>
-            <div className='header'>AI image <span>Generator</span></div>
+            {/* Updated the header slightly */}
+            <div className='header'>Image <span>Search</span></div>
             
             <div className="img-loading">
                 <div className="image">
@@ -46,24 +73,24 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
                     
                     <img 
                         src={image_url === '/' ? default_image : image_url} 
-                        alt="Generated AI Art" 
+                        alt="Search Result" 
                         style={{ display: loading ? 'none' : 'block' }}
                         referrerPolicy="no-referrer"
                         onLoad={() => {
                             setLoading(false);
-                            if (image_url !== '/') {
+                            if (image_url !== '/' && image_url !== default_image) {
                                 onImageGenerated(activePrompt, image_url);
                             }
                         }}
                         onError={() => {
-                            if (image_url !== '/') {
-                                alert("Image generation failed. Try another prompt!");
+                            if (image_url !== '/' && image_url !== default_image) {
+                                alert("Failed to load the image from Unsplash.");
                                 setImage_url(default_image);
                                 setLoading(false);
                             }
                         }}
                     />
-                    {image_url !== '/' && !loading && (
+                    {image_url !== '/' && image_url !== default_image && !loading && (
                         <button 
                             className="download-btn-main"
                             onClick={() => downloadImage(image_url, activePrompt)}
@@ -73,7 +100,7 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
                     )}
                     <div className="loading">
                       <div className={loading ? "loading-bar-full" : "loading-bar"}></div>
-                      <div className={loading ? "loading-text" : "display-none"}>Loading....</div>
+                      <div className={loading ? "loading-text" : "display-none"}>Searching....</div>
                     </div>
                 </div>
             </div>
@@ -86,11 +113,12 @@ export const ImageGenerator = ({ onImageGenerated }: ImageGeneratorProps) => {
                     placeholder='Describe what you want to see....'
                     disabled={loading}
                 />
+                {/* Updated button text */}
                 <button type="submit" className="generate-button" disabled={loading}>
-                    {loading ? 'Generating...' : 'Generate'}
+                    {loading ? 'Searching...' : 'Search'}
                 </button>
             </form>
         </div>
     );
 };
-export default ImageGenerator
+export default ImageGenerator;

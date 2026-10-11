@@ -2,7 +2,7 @@ import { ImageGenerator } from './Components/ImageGenerator/ImageGenerator';
 import { HistorySidebar } from './Components/History';
 import { useLocalStorage } from './hooks/UseLocalstorage';
 import { HistoryItem } from './Image';
-import './App.css'; // Make sure this is imported!
+import './App.css';
 
 const App = () => {
     const [history, setHistory] = useLocalStorage<HistoryItem[]>('ai-history-key', []);
